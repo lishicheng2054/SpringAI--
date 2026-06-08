@@ -1,0 +1,6 @@
+build/
+.gradle/
+src/test/
+gradle/
+gradlew
+gradlew.bat

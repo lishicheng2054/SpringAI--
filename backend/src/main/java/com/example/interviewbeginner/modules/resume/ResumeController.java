@@ -5,6 +5,7 @@ import com.example.interviewbeginner.modules.resume.dto.ResumeAnalysisResponse;
 import com.example.interviewbeginner.modules.resume.dto.ResumeRequest;
 import com.example.interviewbeginner.modules.resume.dto.ResumeResponse;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -80,5 +81,14 @@ public class ResumeController {
     @GetMapping("/{resumeId}/analysis")
     public Result<ResumeAnalysisResponse> getAnalysis(@PathVariable Long resumeId) {
         return Result.success(resumeService.getAnalysis(resumeId));
+    }
+
+    /**
+     * 删除简历。
+     */
+    @DeleteMapping("/{resumeId}")
+    public Result<Map<String, String>> deleteResume(@PathVariable Long resumeId) {
+        resumeService.deleteResume(resumeId);
+        return Result.success(Map.of("status", "deleted"));
     }
 }

@@ -24,15 +24,18 @@ public class ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final ResumeAnalysisService analysisService;
+    private final ResumeAnalysisRepository analysisRepository;
     private final DocumentParseService parseService;
     private final ObjectMapper objectMapper;
 
     public ResumeService(ResumeRepository resumeRepository,
                          ResumeAnalysisService analysisService,
+                         ResumeAnalysisRepository analysisRepository,
                          DocumentParseService parseService,
                          ObjectMapper objectMapper) {
         this.resumeRepository = resumeRepository;
         this.analysisService = analysisService;
+        this.analysisRepository = analysisRepository;
         this.parseService = parseService;
         this.objectMapper = objectMapper;
     }
@@ -85,6 +88,19 @@ public class ResumeService {
     public List<ResumeResponse> listResumes() {
         return resumeRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(ResumeResponse::fromEntity).toList();
+    }
+
+    /**
+     * 删除简历（级联删除分析结果）。
+     */
+    @Transactional
+    public void deleteResume(Long id) {
+        ResumeEntity entity = resumeRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESUME_NOT_FOUND,
+                        "简历不存在: id=" + id));
+        analysisRepository.findByResumeId(id).ifPresent(analysisRepository::delete);
+        resumeRepository.delete(entity);
+        log.info("Resume deleted: id={}, candidate={}", id, entity.getCandidateName());
     }
 
     /**

@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 面试会话核心编排服务。
@@ -137,6 +139,80 @@ public class InterviewSessionService {
                         "评估结果不存在，请先完成面试: sessionId=" + sessionId));
 
         return buildResultResponse(session, evaluation);
+    }
+
+    /**
+     * 获取面试历史列表（仅已完成和已评估）。
+     */
+    public List<Map<String, Object>> getHistory() {
+        return sessionRepository
+                .findByStatusInOrderByCreatedAtDesc(
+                        List.of(SessionStatus.COMPLETED, SessionStatus.EVALUATED))
+                .stream()
+                .map(s -> Map.<String, Object>of(
+                        "sessionId", s.getSessionId(),
+                        "resumeId", s.getResumeId(),
+                        "roleType", s.getRoleType(),
+                        "status", s.getStatus().name(),
+                        "totalScore", s.getTotalScore() != null ? s.getTotalScore() : 0,
+                        "questionCount", s.getQuestionCount(),
+                        "startedAt", s.getStartedAt() != null ? s.getStartedAt().toString() : "",
+                        "createdAt", s.getCreatedAt().toString()
+                ))
+                .toList();
+    }
+
+    /**
+     * 对比多次面试结果。
+     */
+    public List<Map<String, Object>> compareSessions(List<String> sessionIds) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (String sid : sessionIds) {
+            try {
+                InterviewSessionEntity s = findSession(sid);
+                InterviewEvaluationEntity e = evaluationRepository.findBySessionId(s.getId()).orElse(null);
+                if (e == null) continue;
+                results.add(Map.<String, Object>of(
+                        "sessionId", sid,
+                        "roleType", s.getRoleType(),
+                        "totalScore", e.getTotalScore(),
+                        "techScore", e.getTechScore(),
+                        "communicationScore", e.getCommunicationScore(),
+                        "logicScore", e.getLogicScore(),
+                        "summary", e.getSummary(),
+                        "createdAt", s.getCreatedAt().toString()
+                ));
+            } catch (Exception ex) {
+                log.warn("Session not found for compare: {}", sid);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * 查找未完成的面试会话（用于中断恢复）。
+     */
+    public Map<String, Object> findUnfinishedSession(Long resumeId) {
+        return sessionRepository
+                .findFirstByResumeIdAndStatusIn(resumeId,
+                        List.of(SessionStatus.NEW, SessionStatus.IN_PROGRESS))
+                .map(s -> {
+                    List<InterviewQuestionEntity> questions =
+                            questionRepository.findBySessionIdOrderByQuestionIndexAsc(s.getId());
+                    InterviewQuestionEntity current = questions.isEmpty() ? null
+                            : questions.get(Math.min(s.getCurrentQuestionIndex(), questions.size() - 1));
+                    return Map.<String, Object>of(
+                            "sessionId", s.getSessionId(),
+                            "currentStep", s.getCurrentQuestionIndex() + 1,
+                            "totalStep", s.getQuestionCount(),
+                            "roleType", s.getRoleType(),
+                            "status", s.getStatus().name(),
+                            "currentQuestion", current != null
+                                    ? Map.of("questionId", current.getId(), "content", current.getContent())
+                                    : null
+                    );
+                })
+                .orElse(null);
     }
 
     /**

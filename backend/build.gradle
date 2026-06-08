@@ -26,6 +26,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
@@ -37,6 +38,9 @@ dependencies {
     // Apache Tika (文档解析: PDF, Word, TXT)
     implementation 'org.apache.tika:tika-core:2.9.2'
     implementation 'org.apache.tika:tika-parsers-standard-package:2.9.2'
+
+    // OpenPDF (PDF报告导出)
+    implementation 'com.github.librepdf:openpdf:2.0.3'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

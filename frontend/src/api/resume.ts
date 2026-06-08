@@ -6,7 +6,6 @@ export async function createResume(req: ResumeRequest): Promise<{ resumeId: numb
   return data
 }
 
-/** 文件上传简历 */
 export async function uploadResume(
   candidateName: string, targetPosition: string, file: File
 ): Promise<ResumeResponse> {
@@ -15,8 +14,7 @@ export async function uploadResume(
   formData.append('targetPosition', targetPosition)
   formData.append('file', file)
   const { data } = await request.post<ResumeResponse>('/api/resumes/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000,
+    headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000,
   })
   return data
 }
@@ -31,13 +29,15 @@ export async function listResumes(): Promise<ResumeResponse[]> {
   return data
 }
 
-/** 触发AI分析 */
+export async function deleteResume(id: number): Promise<void> {
+  await request.delete(`/api/resumes/${id}`)
+}
+
 export async function analyzeResume(resumeId: number): Promise<ResumeAnalysisResponse> {
   const { data } = await request.post<ResumeAnalysisResponse>(`/api/resumes/${resumeId}/analyze`)
   return data
 }
 
-/** 获取AI分析结果 */
 export async function getAnalysis(resumeId: number): Promise<ResumeAnalysisResponse> {
   const { data } = await request.get<ResumeAnalysisResponse>(`/api/resumes/${resumeId}/analysis`)
   return data
